@@ -404,6 +404,7 @@ var PATTERNS = [
   {re:/\btemple\b/gi,id:"temple"},
   {re:/\briches\b/gi,id:"wealth"}
 ];
+if(!window.hatchWidget){ (function(){ var _st=null; window.hatchWidget={ getState:function(d){ if(!_st){ _st=JSON.parse(JSON.stringify(d)); } return _st; }, setState:function(s){ _st=s; } }; })(); }
 var S = window.hatchWidget.getState({screen:"open",idx:{},from:null,pick:{}});
 function nav(screen,from){ S={screen:screen,idx:S.idx||{},from:(from===undefined?null:from),pick:S.pick||{}}; window.hatchWidget.setState(S); render(); }
 function startOver(){ S={screen:"open",idx:S.idx||{},from:null,pick:{}}; window.hatchWidget.setState(S); render(); }
