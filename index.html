@@ -438,28 +438,12 @@ function render(){
       +'<p class="point" style="font-size:17px">'+linkify(esc(E.x))+'</p>';
     if(E.a&&E.a.length){
       html+='<div class="sec">appears in</div>';
-      E.a.forEach(function(s){ html+='<button class="appear" data-dig="'+s+'">'+esc(TITLES[s])+'</button>'; });
     }
     if(E.r&&E.r.length){
       html+='<div class="sec">related</div><div>';
       E.r.forEach(function(r){ html+='<button class="chip" data-ent="'+r+'">'+esc(CODEX[r].n)+'</button>'; });
       html+='</div>';
     }
-    html+='<div class="row"><button class="opt ghost" data-back="1">back</button><button class="opt ghost" data-go="open">start over</button></div>'
-      +'<p class="demo-note">demo. the real thing texts you this every morning.</p></div>';
-  }
-  else if(S.screen.indexOf("dig:")===0){
-    var shelf=S.screen.slice(4);
-    var L0=SHELVES[shelf][0];
-    html='<div class="fade"><div class="kicker">keep digging</div>'
-      +'<div class="verses">'+esc(L0.v)+'</div>'
-      +'<div class="vnote">'+esc(VERSE_NOTES[shelf])+'</div>'
-      +'<p class="point" style="font-size:17px;margin-top:18px">'+linkify(esc(STORIES[shelf]))+'</p>'
-      +'<div class="kicker" style="margin-top:26px">now you</div>'
-      +'<p class="point" style="color:var(--ink);font-weight:700">'+esc(LANDINGS[shelf])+'</p>'
-      +'<div class="kicker" style="margin-top:26px">keep going</div>'
-      +'<p class="point" style="font-size:17px">'+esc(NEXT[shelf].q)+'</p>';
-    NEXT[shelf].opts.forEach(function(o){ html+='<button class="opt" data-lf="'+o[1]+'">'+esc(o[0])+'</button>'; });
     html+='<div class="row"><button class="opt ghost" data-back="1">back</button><button class="opt ghost" data-go="open">start over</button></div>'
       +'<p class="demo-note">demo. the real thing texts you this every morning.</p></div>';
   }
@@ -486,13 +470,15 @@ function render(){
       tags.forEach(function(t){ html+='<button class="chip" data-ent="'+t+'">'+esc(CODEX[t].n.toLowerCase())+'</button>'; });
       html+='</div>';
     }
-    html+='<div class="row">';
-    html+='<button class="opt" data-diggo="'+shelf2+'">keep digging</button>'
-      +'<button class="opt ghost" data-go="open">start over</button></div>';
+    html+='<div class="kicker" style="margin-top:28px">keep digging</div>'
+      +'<p class="point" style="font-size:17px;margin-top:18px">'+linkify(esc(STORIES[shelf2]))+'</p>'
+      +'<div class="kicker" style="margin-top:26px">now you</div>'
+      +'<p class="point" style="color:var(--ink);font-weight:700">'+esc(LANDINGS[shelf2])+'</p>';
     html+='<div class="kicker" style="margin-top:26px">keep going</div>'
       +'<p class="point" style="font-size:17px">'+esc(NEXT[shelf2].q)+'</p>';
     NEXT[shelf2].opts.forEach(function(o){ html+='<button class="opt" data-lf="'+o[1]+'">'+esc(o[0])+'</button>'; });
-    html+='<p class="demo-note">demo. the real thing texts you this every morning.</p></div>';
+    html+='<div class="row"><button class="opt ghost" data-go="open">start over</button></div>'
+      +'<p class="demo-note">demo. the real thing texts you this every morning.</p></div>';
     }
   }
   else {
@@ -508,10 +494,6 @@ function render(){
   app.innerHTML=html;
   var btns=app.querySelectorAll("[data-go]");
   for(var i=0;i<btns.length;i++){ btns[i].addEventListener("click",function(){ nav(this.getAttribute("data-go"),null); }); }
-  var dgs=app.querySelectorAll("[data-diggo]");
-  for(var a=0;a<dgs.length;a++){ dgs[a].addEventListener("click",function(){ var s=this.getAttribute("data-diggo"); nav("dig:"+s,"leaf:"+s); }); }
-  var dg2=app.querySelectorAll("[data-dig]");
-  for(var b=0;b<dg2.length;b++){ dg2[b].addEventListener("click",function(){ nav("dig:"+this.getAttribute("data-dig"),S.screen); }); }
   var ens=app.querySelectorAll("[data-ent]");
   for(var c=0;c<ens.length;c++){ ens[c].addEventListener("click",function(){ nav("codex:"+this.getAttribute("data-ent"),S.screen); }); }
   var lfs=app.querySelectorAll("[data-lf]");
