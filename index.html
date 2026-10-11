@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>what's going on — demo</title>
+<style>
+  html[data-theme="dark"]{
+    --bg:#0d0a07; --ink:#f2e6cf; --dim:#c9b893; --accent:#d98f3e;
+    --line:rgba(242,230,207,.16); --btn:#171209;
+  }
+  html[data-theme="light"]{
+    --bg:#f4ecdc; --ink:#1c150c; --dim:#7a6a4f; --accent:#a8641c;
+    --line:rgba(28,21,12,.16); --btn:#ece1cb;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased; min-height:100vh;
+  }
+  body::after{
+    content:""; position:fixed; inset:-50%; pointer-events:none; z-index:50; opacity:.10;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation:grain 8s steps(10) infinite;
+  }
+  @keyframes grain{
+    0%,100%{transform:translate(0,0)}10%{transform:translate(-5%,-8%)}
+    30%{transform:translate(3%,-12%)}50%{transform:translate(8%,4%)}
+    70%{transform:translate(-8%,8%)}90%{transform:translate(4%,3%)}
+  }
+  .wrap{max-width:640px;margin:0 auto;padding:40px 24px 64px;min-height:100vh;
+    display:flex;flex-direction:column;justify-content:center}
+  .kicker{font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:16px}
+  h1{font-size:clamp(34px,9vw,52px);line-height:1.04;font-weight:900;
+    letter-spacing:-.02em;margin-bottom:14px}
+  .sub{font-size:16px;line-height:1.6;color:var(--dim);margin-bottom:32px;max-width:36ch}
+  .opt{
+    display:block;width:100%;text-align:left;cursor:pointer;
+    background:var(--btn);color:var(--ink);
+    border:1px solid var(--line);border-radius:14px;
+    font-size:18px;font-weight:700;padding:18px 20px;margin-bottom:10px;
+    font-family:inherit;
+  }
+  .opt:active{border-color:var(--accent);transform:scale(.99)}
+  .verses{font-size:13px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--accent);margin:22px 0 14px;font-weight:700}
+  .point{font-size:16px;line-height:1.65;color:var(--dim);max-width:38ch}
+  .move{font-size:16px;line-height:1.65;color:var(--ink);max-width:38ch;
+    margin-top:16px;padding-top:16px;border-top:1px solid var(--line);font-weight:600}
+  .row{display:flex;gap:10px;margin-top:34px}
+  .row .opt{margin-bottom:0;text-align:center;font-size:15px;padding:15px}
+  .ghost{background:transparent}
+  .demo-note{margin-top:28px;font-size:12px;color:var(--dim);opacity:.7;
+    letter-spacing:.06em}
+.ent{background:none;border:none;padding:0;font:inherit;color:var(--accent);font-weight:700;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-decoration-thickness:1px}
+  .chip{display:inline-block;border:1px solid var(--accent);color:var(--accent);border-radius:999px;padding:8px 16px;font-size:13px;font-weight:700;margin:4px 6px 0 0;cursor:pointer;background:none;font-family:inherit}
+  .vnote{font-size:13px;color:var(--dim);margin-top:10px;opacity:.9}
+  .sec{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim);margin:26px 0 10px}
+  .appear{display:block;width:100%;text-align:left;background:var(--btn);border:1px solid var(--line);color:var(--ink);border-radius:12px;padding:14px 16px;font-size:16px;font-weight:700;margin-bottom:8px;cursor:pointer;font-family:inherit}
+  .fade{animation:fade .35s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+var NODES = {
+  open:{q:"what's going on today?",sub:"tell us what's going on. we'll tell you what you need to hear.",opts:[
+    ["i'm alone with my thoughts","alone"],["work is eating me","work"],
+    ["money's on my mind","money"],["it's about love","love"],
+    ["family stuff","family"],["i'm in a waiting season","waiting"],
+    ["i messed up","messed"],["something's heavy","heavy"],
+    ["i need direction","direction"],["i'm good, i just want to grow","grow"]]},
+  alone:{q:"is it the quiet that's loud, or the loneliness?",opts:[
+    ["the quiet is loud","quietkind"],["it's loneliness","lonely"]]},
+  quietkind:{q:"what's loud in the quiet?",opts:[
+    ["i want to hear God","leaf:silence"],["my thoughts won't stop","leaf:mind"]]},
+  lonely:{q:"is it people you miss, or being known?",opts:[
+    ["missing people","leaf:mispeople"],["being known","leaf:beknown"]]},
+  work:{q:"are you weary in the work, or weary of it?",opts:[
+    ["weary in it","exhausted"],["weary of it","meaningkind"]]},
+  exhausted:{q:"where's it heaviest?",opts:[
+    ["my body","leaf:body"],["my mind","leaf:mind"],["my spirit","leaf:spirit"]]},
+  meaningkind:{q:"fork in the road, or fire in your bones?",opts:[
+    ["fork in the road","leaf:twotracks"],["fire in my bones","leaf:ambition"]]},
+  money:{q:"is it today's bread, or bigger barns?",opts:[
+    ["today's bread","leaf:provision"],["bigger barns","moneybig"]]},
+  moneybig:{q:"freedom, or generosity?",opts:[
+    ["i want to be free","leaf:freedom"],["i want to be generous","leaf:giving"]]},
+  love:{q:"are you building something, breaking something, or mending something?",opts:[
+    ["building","leaf:known"],["breaking","fightkind"],["mending","leaf:repair"]]},
+  fightkind:{q:"is it happening now, or has it been sitting?",opts:[
+    ["happening now","leaf:conflict"],["been sitting too long","leaf:repair"]]},
+  family:{q:"is it your parents, your people, or tension?",opts:[
+    ["my parents","leaf:parents"],["my people","leaf:corner"],["there's tension","leaf:conflict"]]},
+  waiting:{q:"waiting on who or what?",opts:[
+    ["a person","leaf:waiting"],["a door","leaf:door"],["a word","leaf:doubt"]]},
+  messed:{q:"who is it between?",opts:[
+    ["me and God","leaf:confess"],["me and someone","leaf:repair"]]},
+  heavy:{q:"did something end, is something fading, or is something weighing on you right now?",opts:[
+    ["something ended","leaf:grief"],["something's fading","leaf:fading"],["something i'm carrying","leaf:carrying"]]},
+  direction:{q:"do you need wisdom, or direction?",opts:[
+    ["wisdom","leaf:decision"],["direction","leaf:ambition"]]},
+  grow:{q:"grow where?",opts:[
+    ["discipline","leaf:discipline"],["generosity","leaf:giving"]]}
+};
+/* shelves: the tree routes here. each shelf holds a pool of cards.
+   pools rotate so repeat visits don't repeat answers.
+   card anatomy: question, verses, one-line point, one concrete move. */
+var SHELVES = {
+  silence:[
+    {q:"When's the last time you sat in silence without reaching for your phone? What are you afraid you'd hear?",v:"1 kings 19:11-12 · psalm 46:10",p:"God wasn't in the wind or the fire. He was in the whisper you can only hear when everything stops.",m:"Tonight: phone in another room, 20 minutes, just sit. See what comes up."},
+    {q:"The noise stopped and the thoughts got louder. What if that's the point?",v:"zephaniah 1:7 · habakkuk 2:20",p:"Be silent before the Lord. Not empty silence, attended silence.",m:"Tomorrow: first 10 minutes, no phone. Let the first voice be yours."}],
+  mispeople:[
+    {q:"You're alone tonight. Is it loneliness, or is it an invitation?",v:"psalm 68:6 · john 14:18",p:"God settles the lonely in homes. Jesus said he wouldn't leave you as orphans.",m:"Tonight: text one person 'thinking of you.' Don't explain it."}],
+  beknown:[
+    {q:"You have people around you and still feel unknown. Who knows the real version?",v:"psalm 139:1-4 · john 10:14",p:"God knows when you sit and rise. Jesus knows his own. Fully known by God is the floor.",m:"This week: tell one person one true thing. Start small."}],
+  body:[
+    {q:"You're running on fumes and calling it faithfulness. When did rest become something you earn instead of something you keep?",v:"mark 6:31 · matthew 11:28",p:"Rest is an invitation, not a prize. 'Come to me, all who are weary' has no performance clause.",m:"This week: put one rest on the calendar like an appointment. Keep it like one."}],
+  mind:[
+    {q:"Your body's in bed but your mind is still on shift. What are you rehearsing that you need to release?",v:"philippians 4:6-7 · psalm 4:8",p:"Bring everything to God and his peace guards your mind. The rehearsal isn't preparation, it's theft.",m:"Tonight: write the looping thought on paper and leave it there."}],
+  spirit:[
+    {q:"You're not tired, you're dry. When's the last time you were filled up instead of just fueled up?",v:"psalm 42:1-2 · isaiah 40:31",p:"As the deer pants for water, so the soul pants for God. Caffeine fuels the body. Only one thing fills the spirit.",m:"Tomorrow: 10 minutes, no input. No phone, no podcast. See what fills."}],
+  twotracks:[
+    {q:"You're building more than one life at once. What if the point was never picking one?",v:"proverbs 16:3 · colossians 3:23",p:"Commit your work to God and your plans get established. The tension about choosing might be a false choice.",m:"Tonight: write both tracks on paper, and what each is for. Look at them side by side."},
+    {q:"Everyone keeps asking when you'll pick a lane. What if the lanes pick you?",v:"proverbs 16:9 · jeremiah 29:11",p:"Your heart plans, but the Lord establishes your steps. You don't have to resolve it tonight.",m:"This week: stop deciding. Just walk. Notice which lane pulls."}],
+  provision:[
+    {q:"The money's tight right now. Do you trust the work, or the Provider?",v:"matthew 6:31-33 · deuteronomy 8:18",p:"Your Father knows what you need. He's the one who gives you power to make wealth.",m:"Tomorrow: before you spend anything, say whose it is out loud."},
+    {q:"You're doing the math again at 2am. Has the math ever once given you peace?",v:"matthew 6:27 · philippians 4:19",p:"Worry can't add an hour to your life. God supplies every need.",m:"This week: no math after midnight. Phone stays out of the bedroom."}],
+  freedom:[
+    {q:"You want financial freedom young. Freedom for what?",v:"1 timothy 6:17-19 · proverbs 13:22",p:"Don't set hope on riches, be rich in good works. Freedom is a tool, and tools are for building.",m:"Tonight: write what your freedom is for, one sentence. Put it where you'll see it."}],
+  known:[
+    {q:"You're thinking about forever with someone. What's the thing about you she'd have to love on your worst day, and does she know it yet?",v:"1 corinthians 13:4-7 · amos 3:3",p:"Love is patient, kind, not self-seeking. Forever starts with honesty about the worst day.",m:"This week: tell her one thing about your worst day. Just the truth."},
+    {q:"She knows your resume. Does she know your fears?",v:"1 john 4:18 · james 5:16",p:"Perfect love casts out fear. The fastest way to be loved fully is to be known fully.",m:"Name one fear out loud to one person. That's the assignment."}],
+  conflict:[
+    {q:"You're mad and it's bedtime. What's the thing you'd say if you weren't trying to win?",v:"ephesians 4:26 · james 1:19",p:"Don't let the sun go down on your anger. Most fights are two people trying to win.",m:"Tonight: say the thing without trying to win. Then listen."},
+    {q:"You replayed the fight three times and won every time. What would it cost to lose on purpose?",v:"philippians 2:3-4 · proverbs 15:1",p:"A soft answer turns away wrath. Winning the replay changes nothing.",m:"Next fight: lose on purpose once. See what happens."}],
+  parents:[
+    {q:"Your parents gave their working lives to something. What did their work teach you that you're carrying, and what are you deliberately leaving?",v:"exodus 20:12 · proverbs 23:22",p:"Honor your father and mother. Carrying forward and leaving behind are both honor, if you choose on purpose.",m:"This week: call and ask what work taught them. Then just listen."}],
+  corner:[
+    {q:"Who's in your corner right now, and have you told them?",v:"proverbs 17:17 · ecclesiastes 4:9-10",p:"A friend loves at all times. Two are better than one.",m:"Today: text your person 'you're in my corner and I know it.'"}],
+  waiting:[
+    {q:"You're waiting. Is the waiting making you bitter, or is it making you ready?",v:"song of songs 8:4 · 1 thessalonians 4:3-5",p:"Don't awaken love before its time. Waiting isn't empty, it's formation.",m:"Tonight: ask yourself, bitter or ready? Then pick one small ready thing for tomorrow."},
+    {q:"You've been waiting so long you've forgotten what you're waiting for. Say it out loud.",v:"psalm 27:14 · habakkuk 2:3",p:"The vision awaits its appointed time. Waiting with a name is hope. Without one, it's just stuck.",m:"Write what you're waiting for, one sentence. Put it on your mirror."}],
+  door:[
+    {q:"You're standing in front of a door that hasn't opened. Do you knock, wait, or walk?",v:"matthew 7:7 · revelation 3:8",p:"Ask, seek, knock. He's set an open door no one can shut.",m:"This week: knock on one door. One email, one call, one ask."}],
+  doubt:[
+    {q:"You believe, mostly. What do you do with the part that doesn't?",v:"mark 9:24",p:"A father said 'I believe, help my unbelief' and Jesus healed the boy anyway.",m:"Tonight: pray the doubt word for word. Don't clean it up."},
+    {q:"You have questions you're afraid to pray. What if the prayer is the question?",v:"psalm 13:1 · jude 1:22",p:"David prayed 'how long, O Lord?' The Bible is full of prayed questions.",m:"Write your hardest question down. That's your prayer tonight."}],
+  confess:[
+    {q:"You know what you did. Are you going to be the cover-up or the confession?",v:"1 john 1:9 · proverbs 28:13",p:"If you confess, he's faithful to forgive. Cover-ups grow in silence.",m:"Today: say it out loud, to God or someone safe."}],
+  repair:[
+    {q:"Who do you need to go to, and what's stopping you?",v:"matthew 5:23-24 · james 5:16",p:"Leave the gift, go be reconciled first. Repair starts with going.",m:"Today: text them 'can we talk?' Don't rehearse. Just go."}],
+  grief:[
+    {q:"Something ended and nobody gave you a word for it. What are you still carrying that you haven't said out loud?",v:"psalm 34:18",p:"The Lord is near to the brokenhearted. Near, not waiting for you to name it right.",m:"Tonight: say the unnamed thing out loud, even if only to God."},
+    {q:"Everyone else moved on. You didn't. That's not failure, it's love with nowhere to go.",v:"john 11:35 · psalm 56:8",p:"Jesus wept. God keeps your tears in his bottle. He doesn't rush you.",m:"Today: let yourself miss it without rushing past."}],
+  fading:[
+    {q:"What are you watching slip away that you haven't grieved yet?",v:"psalm 42:11 · ecclesiastes 3:1",p:"There's a season for everything, including letting go.",m:"Write down what's fading. Grieve it on purpose one evening, then let it go."}],
+  carrying:[
+    {q:"Something's been heavy all week and it hasn't lifted. What is it, in one sentence?",v:"1 peter 5:7 · psalm 55:22",p:"Cast all your anxieties on him, because he cares for you. Cast your burden and he will sustain you. Carrying was never the assignment.",m:"Tonight: write it in one sentence. Then say out loud: I cast this. Mean it."}],
+  decision:[
+    {q:"You've got a call to make and the clock is ticking. Have you actually asked?",v:"james 1:5 · proverbs 3:5-6",p:"If you lack wisdom, ask. Asking isn't stalling, it's the first move.",m:"Tonight: one honest prayer about the call. Then sleep on it."}],
+  ambition:[
+    {q:"You want a lot, and that's fine. But when does holy ambition turn into just hunger?",v:"matthew 6:33 · psalm 37:4",p:"Jesus said this to anxious, poor people, not comfortable optimizers. The problem was never wanting things. It was striving like the Father doesn't know.",m:"Tonight: write the three things you want most. Next to each, write who they're for. A blank line is your answer."}],
+  discipline:[
+    {q:"You want a rule of life. What's the smallest one you'd actually keep?",v:"zechariah 4:10 · luke 16:10",p:"Don't despise small things. Faithful with little, faithful with much.",m:"Pick the smallest version tonight. Do it tomorrow. Five minutes counts."}],
+  giving:[
+    {q:"You give on autopilot. When's the last time giving actually cost you something?",v:"2 corinthians 9:7 · luke 21:1-4",p:"God loves a cheerful giver. Cost is the measure, not amount.",m:"This week: give something you'll feel. Not the autopilot amount."}]
+};
+/* keep digging: the story behind the shelf's anchor passage.
+   who wrote it, when, what they were living through, who they were writing to,
+   what was at stake. painted, not lectured. */
+var STORIES = {
+  silence:"It's the ninth century BC, and Israel is ruled by Ahab and Jezebel, who have spent years hunting down God's prophets and replacing them with 450 prophets of Baal. Elijah just faced all 450 alone on Mount Carmel and called down fire from heaven, the most dramatic win of his life. Then Jezebel sends one message, 'by this time tomorrow you'll be dead,' and the man who faced 450 prophets runs for his life. He goes a full day into the desert, sits under a broom tree, and asks God to let him die. An angel feeds him, twice. He walks forty days to Mount Horeb and hides in a cave. Then God passes by, not in the wind that tore the mountain apart, not in the earthquake, not in the fire, but in a gentle whisper. The loudest victory of Elijah's life was followed by the quietest conversation. If you're waiting for the dramatic answer, you might miss the whisper.",
+  mispeople:"David knew alone. Before he was king, he spent years running from Saul, who had been like a father to him and then tried to pin him to a wall with a spear. Twice. David hid in the cave of Adullam, and the Bible says everyone who was in distress, in debt, or discontented gathered to him, about four hundred men. That's who surrounded him: the distressed, the indebted, the discontented. 'God settles the solitary in a home' wasn't written from a palace. It was written by a fugitive who watched God build a family out of the people nobody else wanted.",
+  beknown:"Nobody knows exactly when David wrote Psalm 139, but nobody doubts he earned it. This is a man betrayed by his king, hunted like an animal, betrayed by his own son Absalom, betrayed by his closest counselor Ahithophel. He knew what it was to be surrounded by people and completely alone in what mattered. 'You know when I sit and when I rise, you are familiar with all my ways.' He's not describing surveillance. He's describing the one relationship where he never had to explain himself. Everybody else got the performance. God got the unedited version, and stayed.",
+  body:"It's around AD 28 in Galilee. The twelve just got back from their first mission trip, sent out two by two with nothing but a staff, and it worked, demons cast out, sick healed, they came home buzzing. But they'd also just learned that John the Baptist, Jesus's cousin, the one who baptized him, had been beheaded by Herod at a birthday party. Grief and adrenaline in the same week. The crowds are pressing so hard they can't even eat. And Jesus looks at his exhausted friends and says: come away by yourselves to a quiet place and rest. Here's the part nobody mentions: they try, and the crowd runs ahead, and the rest gets interrupted, and Jesus feeds five thousand instead. He still said it. The invitation stands even when the rest doesn't happen.",
+  mind:"Paul is in chains, probably in Rome around AD 60, waiting to stand trial before Nero, the emperor who would later burn Christians as garden torches. Paul doesn't know if he'll live. And he's writing to Philippi, the church he loves most, his 'joy and crown,' the ones who sent him money when nobody else did. Their messenger Epaphroditus nearly died getting there. And from a cell, chained to a guard, Paul writes: 'Do not be anxious about anything.' Not from a beach. From prison. Peace wasn't his circumstance. It was his practice, and he was practicing it in the hardest room imaginable.",
+  spirit:"The sons of Korah were temple musicians, and their family name carried a dark story: their ancestor Korah led a rebellion against Moses, and the ground swallowed him alive. They grew up in the shadow of that. Now they're writing far from Jerusalem, far from the temple, maybe in exile, and they're thirsty in a way water can't fix. 'As the deer pants for streams of water, so my soul pants for you, O God.' In the Judean wilderness, a panting deer isn't poetry, it's an animal about to die. They were dry, and they were honest about exactly what they were dry for.",
+  twotracks:"Solomon wrote Proverbs around 970 BC from the throne in Jerusalem, at the height of Israel's power, gold coming in by the ton, the wisest man alive. He wrote it as instruction for young men entering royal service: commit your work to the Lord and your plans will stand. Here's what makes it ache: Solomon didn't. First Kings 11 says his wives turned his heart to other gods, and the kingdom split under his son. 'Commit your work to the Lord' came from a man who knew exactly what it cost to stop committing. The wisdom outlived the wise man.",
+  provision:"It's around AD 28, a hillside in Galilee. Jesus is talking to fishermen, farmers, day laborers, people crushed between Roman taxes and Herod's building projects, people who woke up every morning not knowing if there'd be work. He says: don't be anxious about what you'll eat or drink or wear. The Gentiles chase these things, but your Father knows you need them. Then he points at ravens that don't plant crops and wildflowers more dressed than Solomon, and says: you're worth more than both. 'Seek first the kingdom' wasn't lifestyle advice for comfortable people. It was spoken to people whose worry was completely reasonable. He said it anyway.",
+  freedom:"Ephesus, around AD 62. One of the richest port cities in the Roman Empire, home to the Temple of Artemis, one of the seven wonders of the ancient world, a city where silversmiths once rioted because Paul's preaching was bad for the idol business. Wealth wasn't just money in Ephesus, it was identity, religion, power. Paul writes to Timothy, a young, timid pastor trying to lead a church there while false teachers chase rich donors. 'Charge the rich not to be haughty, nor to set their hopes on the uncertainty of riches.' He'd watched an entire city build itself on wealth. He knew what it couldn't hold.",
+  known:"Corinth, around AD 54. A wealthy port city so famous for immorality that 'to Corinthianize' was slang for sleeping around. The church there was a mess: splitting into factions, 'I follow Paul,' 'I follow Apollos,' suing each other in pagan courts, getting drunk at the Lord's Supper while the poor went hungry, treating spiritual gifts like status symbols. Paul is in Ephesus hearing reports from Chloe's household, and he writes them a letter. Right in the middle of correcting their chaos, chapters 12 and 14 about gifts, he stops and gives them chapter 13. 'Love is patient, love is kind.' The most famous words on love ever written weren't wedding poetry. They were emergency surgery for a church that had forgotten how to love each other, placed exactly where the bleeding was worst.",
+  conflict:"Paul is in prison, probably Rome around AD 60, writing to Ephesus and the surrounding churches. Here's what made Ephesus explosive: it was the first real multi-ethnic church, Jews and Gentiles, people whose peoples had hated each other for centuries, now trying to share one table and one Lord. Paul spends chapter 2 celebrating that the dividing wall is broken. Then chapter 4: 'Be angry and do not sin; do not let the sun go down on your anger, and give no opportunity to the devil.' He knew. Put ancient enemies in one room and the old hatreds rekindle fast, usually overnight. Don't give it the night.",
+  parents:"Mount Sinai, around 1446 BC. Israel has been out of Egypt for weeks, after four hundred years of slavery. These are traumatized people learning to be a nation, and God gives them ten words to build on. Right in the middle, next to 'do not murder' and 'do not steal': 'Honor your father and mother, that your days may be long in the land.' Their parents had lived and died in chains. Most of them had never seen honor modeled, at home or anywhere. God put the family line in the same list as murder, because a people that can't honor its parents can't hold together anything else.",
+  corner:"Solomon again, but old now. Ecclesiastes is the memoir of a man who had everything, seven hundred wives, three hundred concubines, palaces, gardens, gold, wisdom beyond anyone, and calls it all vapor, smoke, chasing wind. 'Two are better than one, because they have a good reward for their toil. For if they fall, one will lift up his fellow.' A man surrounded by a thousand women wrote that what you actually need is one person who picks you up when you fall. He had everyone. He was telling you what he learned too late: a crowd isn't a corner.",
+  waiting:"Tenth century BC, Jerusalem. The Song of Songs is ancient Near Eastern love poetry, urgent, physical, aching, the bride and the groom desperate for each other. And three times, like a refrain, the daughters of Jerusalem are charged: 'Do not stir up or awaken love until it pleases.' In a world of arranged marriages and political alliances, where love was often irrelevant to the match, this poem treats desire as holy and timing as sacred. Even the Bible's most passionate book says: not yet is holy too. The waiting isn't the absence of love. It's love, kept.",
+  door:"Around AD 95, the apostle John is exiled on Patmos, a rocky island prison, for refusing to worship the emperor Domitian. From there he writes to seven churches, including Philadelphia, a small city in Asia Minor. The church there had 'little power,' small, weak, surrounded by bigger, louder congregations, facing hostility and pressure to compromise. And to them Jesus says: 'I have set before you an open door, which no one is able to shut.' Not to the biggest church. Not to the strongest. To the smallest and weakest. The open door was never about their strength. It was about his.",
+  doubt:"Around AD 29, at the foot of the mountain. Jesus has just come down from the Transfiguration, glowing, with Peter, James, and John. At the bottom: chaos. A father brought his boy, who'd been seized by violent fits since childhood, thrown into fire and water, and the other nine disciples tried to help and failed. Scribes are arguing. A crowd is watching. The father is out of options and out of pride. 'I believe; help my unbelief.' He says both things in one breath, in front of everyone. Jesus doesn't correct the doubt. He heals the boy. The most honest prayer in the Gospels got the fastest answer.",
+  confess:"Around AD 90, Ephesus. John is an old man now, the last living apostle, writing to churches being seduced by smooth teachers who claimed the enlightened don't sin, that spirit is pure and the body's failures don't count. 'If we say we have no sin, we deceive ourselves, and the truth is not in us.' John had walked with Jesus for three years. He'd seen him bloody. He wasn't buying the version where nobody needs forgiveness. 'If we confess our sins, he is faithful and just to forgive us.' The confession isn't groveling. It's the doorway the false teachers were trying to brick up.",
+  repair:"Sermon on the Mount, Galilee, around AD 28. Jesus is talking to people whose entire religion runs through the temple in Jerusalem, a journey of days, and the altar where you bring your gift to be right with God. He says: if you're offering your gift at the altar and remember your brother has something against you, leave your gift there. Walk away from the altar. Go be reconciled first, then come back and offer. In one sentence he reorders the whole religion: horizontal before vertical. God would rather wait at the altar than receive a gift from unreconciled hands.",
+  grief:"First Samuel 21. David is running from Saul, who has tried to kill him twice, and he flees to Gath, enemy Philistine territory, which is either brave or insane. The servants of Achish recognize him: isn't this the one they sing about, 'Saul has struck down his thousands, and David his ten thousands'? So David, the giant-killer, pretends to be mad. He scratches at the doors, lets spit run down his beard. They let him go. He escapes to the cave of Adullam. And there, at rock bottom, he writes Psalm 34: 'I sought the Lord, and he answered me.' 'The Lord is near to the brokenhearted.' He didn't write it from a palace remembering hard times. He wrote it from the cave, still smelling like the act.",
+  fading:"Same song as the thirsty deer, Psalms 42 and 43, one long cry from the sons of Korah. Three times the same refrain: 'Why are you cast down, O my soul, and why are you in turmoil within me? Hope in God.' Notice what he's doing: he's not waiting to feel better before he speaks hope. He's preaching to his own soul while it's still down. The feeling hasn't changed. The sermon has started anyway. That's the move: talk to yourself instead of listening to yourself.",
+  decision:"Around AD 45, the earliest letter in the New Testament. James, the brother of Jesus, who didn't believe in him during his lifetime and then became the leader of the Jerusalem church, writes to Jewish Christians scattered by persecution after Stephen was stoned. They're broke, displaced, grieving, making impossible decisions with no good options. James was famous for praying so much his knees were calloused like a camel's. 'If any of you lacks wisdom, let him ask God, who gives generously to all without reproach.' From a man whose knees proved he meant it: the God who gives wisdom doesn't mock you for needing it.",
+  ambition:"Jesus is on a hillside in Galilee around AD 28, talking to fishermen and day laborers crushed between Roman taxes and Herod's building projects, people who woke up not knowing if there'd be work that day. He points at birds that don't plant crops and wildflowers that don't spin cloth, and says your Father feeds them, and you matter more. 'Seek first the kingdom' wasn't a productivity tip. It was told to anxious people to unclench their fists. And a thousand years earlier, David, old and looking back over a whole life of wanting, wrote that delight comes first and the desires get reshaped after. Not get what you want. Want what he wants.",
+  discipline:"Around 520 BC, Jerusalem. The exiles have come home from Babylon and started rebuilding the temple, then stopped for sixteen years. Opposition, discouragement, the foundation sitting there half-finished and embarrassing. The old men who remembered Solomon's temple wept when they saw the new foundation; it looked like nothing. Then the prophets Haggai and Zechariah show up and tell Zerubbabel the governor to start again. Zechariah sees a vision of a gold lampstand and hears: 'Not by might, nor by power, but by my Spirit.' And: 'Who despises the day of small things?' God was looking at a pathetic little foundation and calling it the beginning. The small start wasn't the problem. Quitting was.",
+  giving:"It's Tuesday of Passion Week, around AD 30. Jesus is sitting in the temple courts across from the treasury, thirteen trumpet-shaped collection boxes, watching the crowd. Rich people come through making a show of large gifts. Then a widow, poor in a way that meant she might not eat tomorrow, drops in two tiny copper coins, the smallest coin there was. Jesus calls his disciples over. He wants to make sure they see this. 'She out of her poverty has put in everything she had, her whole living.' Within days he'd be dead. One of the last lessons he chose to teach: heaven's math isn't ours. The amount never mattered. The cost did.",
+  carrying:"Around AD 64, Rome. Nero is emperor, and after the Great Fire he's blaming Christians, feeding them to dogs, burning them as torches in his gardens. Peter, the one who denied Jesus three times around a charcoal fire, restored around another charcoal fire on a beach, now an old man leading a hunted church, writes to believers scattered across Asia Minor. 'Humble yourselves under the mighty hand of God, casting all your anxieties on him, because he cares for you.' From a man who knew exactly what it was to fail and be carried anyway. He wasn't theorizing about anxiety. He was writing to people who might die for this, telling them the caring is the reason to cast."
+};
+var TITLES = {
+  silence:"the whisper", mispeople:"not abandoned", beknown:"fully known",
+  body:"come away", mind:"prison peace", spirit:"dry", twotracks:"both tracks",
+  provision:"the provider", freedom:"freedom for what", known:"emergency surgery",
+  conflict:"don't give it the night", parents:"the family line", corner:"a corner",
+  waiting:"not yet", door:"the open door", doubt:"help my unbelief",
+  confess:"the doorway", repair:"go first", grief:"the cave",
+  fading:"talk to yourself", decision:"camel knees", ambition:"unclench",
+  discipline:"small things", giving:"the widow's coins", carrying:"cast it"
+};
+var LANDINGS = {
+  silence:"What's the whisper you've been too loud to hear?",
+  mispeople:"Who's your 400, the people nobody else wanted who became family?",
+  beknown:"Where are you still performing instead of being known?",
+  body:"What rest have you been postponing until 'after'?",
+  mind:"What's the one anxious thought you'll hand over tonight?",
+  spirit:"What are you actually thirsty for?",
+  twotracks:"What would change if you committed both tracks instead of choosing?",
+  provision:"What would you stop chasing if you believed the Father knows?",
+  freedom:"What did you build your identity on that can't hold it?",
+  known:"Where in your relationships is surgery needed, not poetry?",
+  conflict:"What anger are you letting sleep over tonight?",
+  parents:"What did they survive that you're standing on?",
+  corner:"Who picks you up? Have you told them?",
+  waiting:"What are you keeping holy by not rushing?",
+  door:"What door have you assumed is shut?",
+  doubt:"What's your one-breath honest prayer?",
+  confess:"What doorway have you been bricking up?",
+  repair:"Who do you need to walk to before you worship?",
+  grief:"What cave are you writing from right now?",
+  fading:"What have you been listening to that you should be preaching to?",
+  decision:"What decision needs asking, not just thinking?",
+  ambition:"What are your fists clenched around?",
+  discipline:"What's your small thing that isn't small to God?",
+  giving:"What would 'everything you had' look like for you?",
+  carrying:"What are you still carrying that was never yours to hold?"
+};
+var VERSE_NOTES = {
+  silence:"the story is 1 Kings 19. Psalm 46:10 is the command behind the whisper.",
+  mispeople:"the story is Psalm 68. John 14:18 is Jesus making the same promise personally.",
+  beknown:"the story is Psalm 139. John 10:14 is Jesus saying he knows his own.",
+  body:"the story is Mark 6. Matthew 11:28 is the wider invitation it comes from.",
+  mind:"the story is Philippians 4, written from prison. Psalm 4:8 is David practicing the same peace.",
+  spirit:"the story is Psalm 42. Isaiah 40:31 is the promise on the other side of the thirst.",
+  twotracks:"the story is Proverbs 16. Colossians 3:23 is what committing looks like on Monday.",
+  provision:"the story is Matthew 6. Deuteronomy 8:18 is the older truth underneath: God gives the power to make wealth.",
+  freedom:"the story is 1 Timothy 6. Proverbs 13:22 keeps the long view: leave an inheritance, but don't worship it.",
+  known:"the story is 1 Corinthians 13. Amos 3:3 asks the premise: can two walk together?",
+  conflict:"the story is Ephesians 4. James 1:19 is the how: quick to listen, slow to speak.",
+  parents:"the story is Exodus 20. Proverbs 23:22 makes it personal: don't despise her when she's old.",
+  corner:"the story is Ecclesiastes 4. Proverbs 17:17 defines the friend: one who loves at all times.",
+  waiting:"the story is the Song. 1 Thessalonians 4 puts holiness around the same desire.",
+  door:"the story is Revelation 3. Matthew 7:7 is the knock that precedes the open door.",
+  doubt:"one verse. It carries the whole weight.",
+  confess:"the story is 1 John 1. Proverbs 28:13 states the principle: covering up never prospers.",
+  repair:"the story is Matthew 5. James 5:16 is the practice: confess, pray, be healed.",
+  grief:"one verse. Near to the brokenhearted says everything.",
+  fading:"the story is Psalm 42. Ecclesiastes 3:1 names the season: everything has its time.",
+  decision:"the story is James 1. Proverbs 3:5-6 is the posture: don't lean on your own understanding.",
+  ambition:"the story is Matthew 6. Psalm 37:4 is the reorder: delight first, desires reshaped.",
+  discipline:"the story is Zechariah 4. Luke 16:10 is the principle: faithful with little, faithful with much.",
+  giving:"the story is Luke 21. 2 Corinthians 9:7 names what God loves: the cheerful giver.",
+  carrying:"the story is 1 Peter 5. Psalm 55:22 is David's older version: cast your burden, he sustains."
+};
+var NEXT = {
+  silence:{q:"what do you hear when it gets quiet?",opts:[["nothing, just noise","mind"],["his absence","spirit"]]},
+  mispeople:{q:"do you have your people?",opts:[["yes, I found them","corner"],["not yet","beknown"]]},
+  beknown:{q:"who are you performing for?",opts:[["someone I love","known"],["God","confess"]]},
+  body:{q:"what's really keeping you from rest?",opts:[["my mind won't quit","mind"],["I feel far from him","spirit"]]},
+  mind:{q:"what's underneath the worry?",opts:[["not enough","provision"],["too much to carry","carrying"]]},
+  spirit:{q:"when did you last feel close?",opts:[["a long time ago","fading"],["not sure I ever did","doubt"]]},
+  twotracks:{q:"what's the fear underneath?",opts:[["choosing wrong","decision"],["wanting too much","ambition"]]},
+  provision:{q:"if you believed it, what would you do?",opts:[["stop striving","body"],["give more","giving"]]},
+  freedom:{q:"what was it?",opts:[["money","giving"],["success","ambition"]]},
+  known:{q:"is it with one person?",opts:[["yes","conflict"],["it's with me","confess"]]},
+  conflict:{q:"do you need to move first?",opts:[["yes","repair"],["I need to let it go","carrying"]]},
+  parents:{q:"how do you honor it?",opts:[["carry it forward","discipline"],["forgive what's broken","repair"]]},
+  corner:{q:"what does this make you want?",opts:[["to be known like that","beknown"],["to give like that","giving"]]},
+  waiting:{q:"waiting on what?",opts:[["an answer","doubt"],["a door","door"]]},
+  door:{q:"what kind of door?",opts:[["a calling","ambition"],["a relationship","known"]]},
+  doubt:{q:"what's the doubt about?",opts:[["God himself","spirit"],["my choices","decision"]]},
+  confess:{q:"what now?",opts:[["tell someone","repair"],["start fresh","discipline"]]},
+  repair:{q:"what's stopping you?",opts:[["fear","doubt"],["pride","confess"]]},
+  grief:{q:"are you alone in it?",opts:[["yes","mispeople"],["no, but still heavy","carrying"]]},
+  fading:{q:"what have you been listening to?",opts:[["my fears","mind"],["the quiet itself","silence"]]},
+  decision:{q:"is it between two paths?",opts:[["yes","twotracks"],["no, just hard","waiting"]]},
+  ambition:{q:"can you open your hands?",opts:[["not yet","provision"],["I want to","giving"]]},
+  discipline:{q:"where are you stuck?",opts:[["I keep quitting","fading"],["don't know where to start","decision"]]},
+  giving:{q:"what's stopping you?",opts:[["fear of not having enough","provision"],["my heart's not in it","confess"]]},
+  carrying:{q:"can you set it down?",opts:[["not yet","grief"],["I need help","corner"]]}
+};
+var DIAG = {
+  silence:{q:"have you been avoiding the quiet, or are you already in it?",opts:[["avoiding it",0],["already in it, and it's loud",1]]},
+  twotracks:{q:"is the pressure coming from inside or outside?",opts:[["inside, i'm torn",0],["outside, everyone keeps asking",1]]},
+  provision:{q:"is it the bills, or the worrying?",opts:[["the bills are tight",0],["i'm doing math at 2am",1]]},
+  known:{q:"is it about the future, or about right now?",opts:[["the future, forever",0],["right now, my fears",1]]},
+  conflict:{q:"is it happening now, or are you replaying it?",opts:[["happening now",0],["replaying it",1]]},
+  waiting:{q:"do you still know what you're waiting for?",opts:[["yes",0],["i've forgotten",1]]},
+  doubt:{q:"can you say the doubt out loud?",opts:[["yes, i believe mostly",0],["no, i'm afraid to pray it",1]]},
+  grief:{q:"did something end, or did everyone else move on?",opts:[["something ended",0],["everyone moved on",1]]}
+};
+var TOPIC_TAGS = {
+  freedom:["wealth"], provision:["wealth"], giving:["wealth"], twotracks:["wealth"],
+  body:["rest"], silence:["rest"],
+  known:["love"], grief:["grief"], confess:["forgiveness"], repair:["forgiveness"], waiting:["waiting"]
+};
+var CODEX = {
+  paul:{t:"person",n:"Paul",x:"The apostle to the Gentiles. A Pharisee who hunted Christians until Jesus stopped him blind on the road to Damascus around AD 34. He planted churches across the Roman Empire, wrote thirteen letters, and was likely beheaded under Nero. Half the New Testament is his.",a:["mind","freedom","known","conflict"],r:["timothy","ephesus","corinth","rome","ad60s"]},
+  david:{t:"person",n:"David",x:"Shepherd, giant-killer, fugitive, king of Israel around 1000 BC. Wrote half the Psalms. A man after God's own heart who failed spectacularly with Bathsheba and repented publicly in Psalm 51.",a:["mispeople","beknown","grief","ambition"],r:["jerusalem","solomon","bc1000s"]},
+  jesus:{t:"person",n:"Jesus",x:"Jesus of Nazareth. About three years of public ministry, AD 27 to 30: preaching in Galilee, healing, gathering twelve nobodies, clashing with the religious elite. Crucified under Pontius Pilate outside Jerusalem. Christians believe he rose. Everything in this book bends toward him.",a:["body","provision","ambition","doubt","giving","repair"],r:["ad27","jerusalem","rome"]},
+  timothy:{t:"person",n:"Timothy",x:"Paul's protégé. Son of a Jewish mother, Eunice, and a Greek father. Joined Paul as a teenager at Lystra and ended up leading the church in Ephesus while young and timid. Paul wrote him two deeply personal letters. That's the relationship: a mentor who saw something in a kid and wouldn't let him shrink from it.",a:["freedom"],r:["paul","ephesus","ad60s"]},
+  solomon:{t:"person",n:"Solomon",x:"David's son, third king of Israel. Asked God for wisdom and got it, plus wealth beyond imagining. Built the temple, wrote Proverbs, Ecclesiastes, and the Song. Drifted late in life, and the kingdom split under his son.",a:["twotracks","corner","waiting"],r:["david","jerusalem","bc1000s"]},
+  elijah:{t:"person",n:"Elijah",x:"Ninth-century BC prophet who stood alone against King Ahab and Queen Jezebel. Called down fire on Mount Carmel, then ran for his life and asked God to let him die. God answered in a whisper.",a:["silence"],r:["bc900s"]},
+  john:{t:"person",n:"John the apostle",x:"The youngest disciple, the one Jesus loved. Wrote the Gospel of John, three letters, and Revelation. Exiled to Patmos under Domitian around AD 95. The last living apostle.",a:["confess","door"],r:["ad90s","ephesus"]},
+  jbap:{t:"person",n:"John the Baptist",x:"Jesus's cousin. A wild preacher in camel's hair who baptized Jesus in the Jordan, then was beheaded by Herod Antipas at a birthday party for criticizing his marriage. Jesus called him the greatest born of women.",a:["body"],r:["jesus","ad27"]},
+  james:{t:"person",n:"James",x:"The brother of Jesus, who didn't believe in him during his lifetime, then became the leader of the Jerusalem church. Wrote the earliest New Testament letter. Famous for praying so much his knees were calloused like a camel's. Martyred around AD 62.",a:["decision"],r:["jerusalem","ad40s","jesus"]},
+  peter:{t:"person",n:"Peter",x:"The fisherman Jesus renamed 'rock.' Denied Jesus three times around a charcoal fire, was restored around another one on a beach, then preached at Pentecost and led the early church. Tradition says he was crucified upside down in Rome under Nero.",a:["carrying"],r:["rome","ad60s","jesus"]},
+  ephesus:{t:"place",n:"Ephesus",x:"Wealthy port city on Rome's eastern edge, home to the Temple of Artemis, one of the seven wonders of the ancient world. Paul spent three years here, longer than anywhere, and the silversmiths rioted when his preaching hurt the idol business. Timothy pastored here.",a:["freedom","conflict","confess"],r:["paul","timothy","ad60s","wealth"]},
+  corinth:{t:"place",n:"Corinth",x:"Wealthy, cosmopolitan port city notorious for immorality. Paul planted the church here around AD 51 and wrote it two corrective letters. The love chapter was emergency surgery for this congregation.",a:["known"],r:["paul","ad50s"]},
+  jerusalem:{t:"place",n:"Jerusalem",x:"The city of David, home of the temple, center of Jewish worship, and birthplace of the church at Pentecost. Jesus was crucified outside its walls. Rome destroyed it in AD 70.",a:["spirit","discipline","giving","decision"],r:["david","solomon","ad27"]},
+  rome:{t:"place",n:"Rome",x:"Capital of the empire that ruled Paul and Jesus's world. Paul was imprisoned here and wrote some of his greatest letters in chains. Peter was likely martyred here under Nero. The church that started in hiding would one day inherit the empire.",a:["mind","conflict","carrying"],r:["paul","peter","ad60s"]},
+  ad60s:{t:"time",n:"The AD 60s",x:"Nero is emperor and losing his mind. Paul is in chains in Rome writing Philippians and Ephesians. Peter writes to hunted churches. James is martyred in Jerusalem. The church is growing and bleeding at the same time.",a:["mind","conflict","freedom","carrying"],r:["paul","peter","rome"]},
+  ad50s:{t:"time",n:"The AD 50s",x:"Paul's great missionary journeys. He plants the church in Corinth, writes to the Thessalonians and the Corinthians. The gospel moves west across the empire, one port city at a time.",a:["known"],r:["paul","corinth"]},
+  ad27:{t:"time",n:"AD 27-30: Jesus's ministry",x:"Three years that split history. Jesus preaches in Galilee, heals, gathers twelve nobodies, clashes with the religious elite, and is crucified under Pontius Pilate around AD 30.",a:["body","provision","repair","ambition","doubt","giving"],r:["jesus","jerusalem","rome"]},
+  ad90s:{t:"time",n:"The AD 90s",x:"Domitian is emperor and demands worship as a god. John is exiled to Patmos and writes Revelation. He's the last living apostle, writing to churches under pressure to compromise.",a:["door","confess"],r:["john","ephesus"]},
+  ad40s:{t:"time",n:"The AD 40s",x:"The church is brand new, mostly Jewish, centered in Jerusalem. Stephen is stoned, persecution scatters the believers, and James, the brother of Jesus, leads the mother church and writes the first New Testament letter.",a:["decision"],r:["james","jerusalem"]},
+  bc900s:{t:"time",n:"The 900s BC",x:"Israel is split in two. The northern kingdom is ruled by Ahab and Jezebel, who are systematically killing God's prophets and installing Baal worship. Elijah stands alone.",a:["silence"],r:["elijah"]},
+  bc1000s:{t:"time",n:"The 1000s BC",x:"David unites Israel and makes Jerusalem his capital. His son Solomon builds the temple, and the kingdom reaches its peak, wealth, wisdom, power, then starts rotting from the inside.",a:["mispeople","beknown","twotracks","corner","waiting","grief"],r:["david","solomon","jerusalem"]},
+  bc1400s:{t:"time",n:"The 1400s BC",x:"After four hundred years of slavery in Egypt, Moses leads Israel out. At Mount Sinai they receive the law, including the Ten Commandments, and a traumatized people learns to be a nation.",a:["parents"],r:[]},
+  bc500s:{t:"time",n:"The 500s BC",x:"After seventy years of exile in Babylon, a remnant returns to Jerusalem to rebuild. The temple foundation looks pathetic next to Solomon's. The prophets Haggai and Zechariah push them to finish it anyway.",a:["discipline"],r:["jerusalem"]},
+  wealth:{t:"topic",n:"Wealth",x:"Wealth in the Bible is never simple. It's a tool (Proverbs 13:22), a test (1 Timothy 6), a danger (Matthew 19:24), and a responsibility (Luke 12:48). The throughline across every era: it's not yours. You're holding it.",a:["freedom","provision","giving","twotracks"],r:["ephesus","solomon"]},
+  rest:{t:"topic",n:"Rest",x:"Rest in the Bible isn't laziness, it's trust. God rested on the seventh day and commanded the Sabbath. Jesus spent his ministry inviting exhausted people to come away. Rest is what you do because the world doesn't rest on you.",a:["body","silence"],r:[]},
+  ahab:{t:"person",n:"Ahab",x:"King of Israel's northern kingdom in the 900s BC. Married Jezebel, a Phoenician princess, and together they replaced the worship of God with Baal and hunted down God's prophets. The Bible's verdict is blunt: he did more evil than all the kings before him.",a:["silence"],r:["jezebel","elijah","bc900s"]},
+  jezebel:{t:"person",n:"Jezebel",x:"Phoenician princess who married King Ahab and became the power behind Israel's throne in the 900s BC. She imported Baal worship, funded 450 prophets of Baal, and put a death threat on Elijah that sent him running. Her name became shorthand for corrupting power.",a:["silence"],r:["ahab","elijah","bc900s"]},
+  saul:{t:"person",n:"Saul",x:"Israel's first king, anointed by Samuel. Started humble, grew paranoid, and spent his last years hunting David, the young man who had been like a son to him. Died on Mount Gilboa after losing to the Philistines.",a:["mispeople","grief"],r:["david","bc1000s"]},
+  absalom:{t:"person",n:"Absalom",x:"David's handsome, charismatic third son. Murdered his half-brother, then led a rebellion that drove David from Jerusalem. David ordered his generals to spare him. They didn't. David's grief over him is one of the rawest moments in the Bible.",a:["beknown"],r:["david","bc1000s"]},
+  moses:{t:"person",n:"Moses",x:"The man who led Israel out of Egypt after four hundred years of slavery. Received the law at Sinai, spoke with God face to face, and never entered the promised land himself. The rebellion of Korah in Numbers 16 was against his leadership.",a:["parents","spirit"],r:["bc1400s","sinai"]},
+  herod:{t:"person",n:"Herod Antipas",x:"Son of Herod the Great, ruler of Galilee under Rome. Beheaded John the Baptist at a birthday party to save face in front of his guests. Jesus called him 'that fox.'",a:["body","ambition","provision"],r:["jbap","ad27","rome","galilee"]},
+  nero:{t:"person",n:"Nero",x:"Emperor of Rome from AD 54 to 68. After the Great Fire of Rome in AD 64, he blamed the Christians and had them torn by dogs and burned as human torches in his gardens. Tradition says both Peter and Paul were martyred under him.",a:["mind","conflict","carrying"],r:["rome","ad60s","paul","peter"]},
+  domitian:{t:"person",n:"Domitian",x:"Emperor of Rome from AD 81 to 96. Demanded to be worshiped as a god and exiled those who refused, including the apostle John to Patmos. Revelation was written under his reign.",a:["door"],r:["john","ad90s","rome"]},
+  stephen:{t:"person",n:"Stephen",x:"The first Christian martyr. A deacon in the Jerusalem church known for wisdom and miracles, stoned around AD 34 after a speech that enraged the religious council. His death scattered the church. Paul was there, holding the coats.",a:["decision"],r:["ad40s","james","paul"]},
+  galilee:{t:"place",n:"Galilee",x:"The northern region of Israel, green hills around a lake, far from Jerusalem's power centers. Jesus grew up in Nazareth here and did most of his ministry around the Sea of Galilee: fishermen, farmers, villages Rome mostly ignored.",a:["body","provision","repair","ambition"],r:["jesus","ad27","herod"]},
+  patmos:{t:"place",n:"Patmos",x:"A small rocky island in the Aegean Sea, used by Rome as a prison for exiles. John was sent here under Domitian for refusing emperor worship, and wrote Revelation here around AD 95.",a:["door"],r:["john","ad90s"]},
+  philadelphia:{t:"place",n:"Philadelphia",x:"A small city in Asia Minor, one of the seven churches in Revelation. The congregation had 'little power,' small and weak, surrounded by pressure to compromise. To them, not the biggest church, Jesus promised an open door no one could shut.",a:["door"],r:["john","ad90s"]},
+  babylon:{t:"place",n:"Babylon",x:"The empire that destroyed Jerusalem in 586 BC and carried Israel into exile for seventy years. In the Bible, Babylon becomes the symbol of every arrogant power that opposes God, and of the long road home.",a:["discipline"],r:["bc500s","jerusalem"]},
+  sinai:{t:"place",n:"Sinai",x:"The mountain in the desert where Moses received the Ten Commandments, also called Horeb. Centuries later Elijah fled here and heard the whisper. The place where a traumatized people became a nation.",a:["parents","silence"],r:["moses","bc1400s","elijah"]},
+  temple:{t:"place",n:"The temple in Jerusalem",x:"When the stories say 'the temple,' they mean this one, in Jerusalem, not temples generally. First built by Solomon, destroyed by Babylon, rebuilt small after the exile, then expanded by Herod into one of the ancient world's marvels. The center of Jewish worship, where sacrifices were offered, and the treasury where Jesus watched the widow give.",a:["discipline","giving","repair"],r:["jerusalem","solomon","bc1000s","bc500s"]},
+  love:{t:"topic",n:"Love",x:"Love in the Bible isn't a feeling first, it's a pattern: patient, kind, not envious, not proud, keeping no record of wrongs. The most famous definition was written as emergency surgery for a church tearing itself apart.",a:["known"],r:["corinth","paul"]},
+  grief:{t:"topic",n:"Grief",x:"Grief in the Bible is never rushed and never hidden. David wrote psalms from caves, Job sat in ashes, Jesus wept at a tomb. The promise isn't that it won't hurt. It's that God is near to the brokenhearted.",a:["grief"],r:["david"]},
+  forgiveness:{t:"topic",n:"Forgiveness",x:"Forgiveness in the Bible runs two directions: God forgiving us when we confess, and us forgiving each other before we worship. Both are treated as non-negotiable, and both start with going first.",a:["confess","repair"],r:["john","jesus"]},
+  waiting:{t:"topic",n:"Waiting",x:"Waiting in the Bible is active, not passive. Israel waited 400 years in Egypt and 70 in Babylon. The psalmists waited in caves. The throughline: waiting is where trust gets built, and 'not yet' can be holy.",a:["waiting"],r:[]},
+};
+var PATTERNS = [
+  {re:/John the Baptist/g,id:"jbap"},
+  {re:/Temple of Artemis/g,id:"ephesus"},
+  {re:/Roman Empire/g,id:"rome"},
+  {re:/ninth century BC/g,id:"bc900s"},
+  {re:/Tenth century BC/g,id:"bc1000s"},
+  {re:/1446 BC/g,id:"bc1400s"},
+  {re:/970 BC/g,id:"bc1000s"},
+  {re:/520 BC/g,id:"bc500s"},
+  {re:/AD 62/g,id:"ad60s"},
+  {re:/AD 60/g,id:"ad60s"},
+  {re:/AD 54/g,id:"ad50s"},
+  {re:/AD 95/g,id:"ad90s"},
+  {re:/AD 90/g,id:"ad90s"},
+  {re:/AD 45/g,id:"ad40s"},
+  {re:/AD 30/g,id:"ad27"},
+  {re:/AD 29/g,id:"ad27"},
+  {re:/AD 28/g,id:"ad27"},
+  {re:/Peter, James, and John/g,id:null},
+  {re:/\bPaul\b/g,id:"paul"},
+  {re:/\bDavid\b/g,id:"david"},
+  {re:/\bJesus\b/g,id:"jesus"},
+  {re:/\bTimothy\b/g,id:"timothy"},
+  {re:/\bSolomon\b/g,id:"solomon"},
+  {re:/\bElijah\b/g,id:"elijah"},
+  {re:/\bJames\b/g,id:"james"},
+  {re:/\bPeter\b/g,id:"peter"},
+  {re:/\bJohn\b/g,id:"john"},
+  {re:/\bEphesus\b/g,id:"ephesus"},
+  {re:/\bCorinth\b/g,id:"corinth"},
+  {re:/\bJerusalem\b/g,id:"jerusalem"},
+  {re:/\bRome\b/g,id:"rome"},
+  {re:/\bwealth\b/gi,id:"wealth"},
+  {re:/Herod Antipas/g,id:"herod"},
+  {re:/Mount Sinai/g,id:"sinai"},
+  {re:/\bAhab\b/g,id:"ahab"},
+  {re:/\bJezebel\b/g,id:"jezebel"},
+  {re:/\bSaul\b/g,id:"saul"},
+  {re:/\bAbsalom\b/g,id:"absalom"},
+  {re:/\bMoses\b/g,id:"moses"},
+  {re:/\bHerod\b/g,id:"herod"},
+  {re:/\bNero\b/g,id:"nero"},
+  {re:/\bDomitian\b/g,id:"domitian"},
+  {re:/\bStephen\b/g,id:"stephen"},
+  {re:/\bGalilee\b/g,id:"galilee"},
+  {re:/\bPatmos\b/g,id:"patmos"},
+  {re:/\bPhiladelphia\b/g,id:"philadelphia"},
+  {re:/\bBabylon\b/g,id:"babylon"},
+  {re:/\bSinai\b/g,id:"sinai"},
+  {re:/\bHoreb\b/g,id:"sinai"},
+  {re:/\btemple\b/gi,id:"temple"},
+  {re:/\briches\b/gi,id:"wealth"}
+];
+var S = window.hatchWidget.getState({screen:"open",idx:{},from:null,pick:{}});
+function nav(screen,from){ S={screen:screen,idx:S.idx||{},from:(from===undefined?null:from),pick:S.pick||{}}; window.hatchWidget.setState(S); render(); }
+function startOver(){ S={screen:"open",idx:S.idx||{},from:null,pick:{}}; window.hatchWidget.setState(S); render(); }
+function another(shelf){ var idx=S.idx||{}; var pool=SHELVES[shelf]; idx[shelf]=((idx[shelf]||0)+1)%pool.length; S={screen:S.screen,idx:idx,from:S.from||null,pick:S.pick||{}}; window.hatchWidget.setState(S); render(); }
+window.addEventListener("hatch-widget-state",function(e){ S=e.detail.state; render(); });
+function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML;}
+function linkify(text){
+  var items=[];
+  for(var k=0;k<PATTERNS.length;k++){
+    (function(p){
+      text=text.replace(p.re,function(m){
+        var ph="\u0000"+items.length+"\u0000";
+        items.push({ph:ph,id:p.id,label:m});
+        return ph;
+      });
+    })(PATTERNS[k]);
+  }
+  for(var j=0;j<items.length;j++){
+    var it=items[j];
+    var rep=it.id?'<button class="ent" data-ent="'+it.id+'">'+esc(it.label)+'</button>':esc(it.label);
+    text=text.split(it.ph).join(rep);
+  }
+  return text;
+}
+function render(){
+  var app=document.getElementById("app");
+  var html="";
+  if(S.screen.indexOf("codex:")===0){
+    var id=S.screen.slice(6), E=CODEX[id];
+    html='<div class="fade"><div class="kicker">'+esc(E.t)+'</div><h1>'+esc(E.n)+'</h1>'
+      +'<p class="point" style="font-size:17px">'+linkify(esc(E.x))+'</p>';
+    if(E.a&&E.a.length){
+      html+='<div class="sec">appears in</div>';
+      E.a.forEach(function(s){ html+='<button class="appear" data-dig="'+s+'">'+esc(TITLES[s])+'</button>'; });
+    }
+    if(E.r&&E.r.length){
+      html+='<div class="sec">related</div><div>';
+      E.r.forEach(function(r){ html+='<button class="chip" data-ent="'+r+'">'+esc(CODEX[r].n)+'</button>'; });
+      html+='</div>';
+    }
+    html+='<div class="row"><button class="opt ghost" data-back="1">back</button><button class="opt ghost" data-go="open">start over</button></div>'
+      +'<p class="demo-note">demo. the real thing texts you this every morning.</p></div>';
+  }
+  else if(S.screen.indexOf("dig:")===0){
+    var shelf=S.screen.slice(4);
+    var L0=SHELVES[shelf][0];
+    html='<div class="fade"><div class="kicker">keep digging</div>'
+      +'<div class="verses">'+esc(L0.v)+'</div>'
+      +'<div class="vnote">'+esc(VERSE_NOTES[shelf])+'</div>'
+      +'<p class="point" style="font-size:17px;margin-top:18px">'+linkify(esc(STORIES[shelf]))+'</p>'
+      +'<div class="kicker" style="margin-top:26px">now you</div>'
+      +'<p class="point" style="color:var(--ink);font-weight:700">'+esc(LANDINGS[shelf])+'</p>'
+      +'<div class="kicker" style="margin-top:26px">keep going</div>'
+      +'<p class="point" style="font-size:17px">'+esc(NEXT[shelf].q)+'</p>';
+    NEXT[shelf].opts.forEach(function(o){ html+='<button class="opt" data-lf="'+o[1]+'">'+esc(o[0])+'</button>'; });
+    html+='<div class="row"><button class="opt ghost" data-back="1">back</button><button class="opt ghost" data-go="open">start over</button></div>'
+      +'<p class="demo-note">demo. the real thing texts you this every morning.</p></div>';
+  }
+  else if(S.screen.indexOf("leaf:")===0){
+    var shelf2=S.screen.slice(5);
+    var pk=(S.pick&&S.pick[shelf2]);
+    if(DIAG[shelf2]&&pk===undefined){
+      var D=DIAG[shelf2];
+      html='<div class="fade"><div class="kicker">one more question</div><h1>'+esc(D.q)+'</h1>';
+      D.opts.forEach(function(o,ix){ html+='<button class="opt" data-pick="'+shelf2+':'+ix+'">'+esc(o[0])+'</button>'; });
+      html+='<div class="row"><button class="opt ghost" data-back="1">back</button><button class="opt ghost" data-go="open">start over</button></div>'
+        +'<p class="demo-note">demo. the real thing texts you this every morning.</p></div>';
+    } else {
+    var pool=SHELVES[shelf2];
+    var i=(S.idx&&S.idx[shelf2])||0;
+    var L=pool[i%pool.length];
+    html='<div class="fade"><div class="kicker">for today</div><h1>'+esc(L.q)+'</h1>'
+      +'<div class="verses">'+esc(L.v)+'</div>'
+      +'<div class="vnote">'+esc(VERSE_NOTES[shelf2])+'</div>'
+      +'<p class="point">'+esc(L.p)+'</p>'
+      +'<p class="move">'+esc(L.m)+'</p>';
+    var tags=TOPIC_TAGS[shelf2]||[];
+    if(tags.length){
+      html+='<div style="margin-top:16px"><span class="vnote">deep dive: </span>';
+      tags.forEach(function(t){ html+='<button class="chip" data-ent="'+t+'">'+esc(CODEX[t].n.toLowerCase())+'</button>'; });
+      html+='</div>';
+    }
+    html+='<div class="row">';
+    if(pool.length>1) html+='<button class="opt" data-another="'+shelf2+'">not quite it? another one</button>';
+    html+='<button class="opt" data-diggo="'+shelf2+'">keep digging</button>'
+      +'<button class="opt ghost" data-go="open">start over</button></div>'
+      +'<p class="demo-note">demo. the real thing texts you this every morning.</p></div>';
+    }
+  }
+  else {
+    var N=NODES[S.screen]||NODES.open;
+    html='<div class="fade">';
+    html+=S.screen!=="open"?'<div class="kicker">what\'s going on</div>':'<div class="kicker">a demo</div>';
+    html+='<h1>'+esc(N.q)+'</h1>';
+    if(N.sub) html+='<p class="sub">'+esc(N.sub)+'</p>';
+    N.opts.forEach(function(o){ html+='<button class="opt" data-go="'+o[1]+'">'+esc(o[0])+'</button>'; });
+    if(S.screen!=="open") html+='<div class="row"><button class="opt ghost" data-go="open">start over</button></div>';
+    html+='</div>';
+  }
+  app.innerHTML=html;
+  var btns=app.querySelectorAll("[data-go]");
+  for(var i=0;i<btns.length;i++){ btns[i].addEventListener("click",function(){ nav(this.getAttribute("data-go"),null); }); }
+  var dgs=app.querySelectorAll("[data-diggo]");
+  for(var a=0;a<dgs.length;a++){ dgs[a].addEventListener("click",function(){ var s=this.getAttribute("data-diggo"); nav("dig:"+s,"leaf:"+s); }); }
+  var dg2=app.querySelectorAll("[data-dig]");
+  for(var b=0;b<dg2.length;b++){ dg2[b].addEventListener("click",function(){ nav("dig:"+this.getAttribute("data-dig"),S.screen); }); }
+  var ens=app.querySelectorAll("[data-ent]");
+  for(var c=0;c<ens.length;c++){ ens[c].addEventListener("click",function(){ nav("codex:"+this.getAttribute("data-ent"),S.screen); }); }
+  var lfs=app.querySelectorAll("[data-lf]");
+  for(var f=0;f<lfs.length;f++){ lfs[f].addEventListener("click",function(){ nav("leaf:"+this.getAttribute("data-lf"),S.screen); }); }
+  var bks=app.querySelectorAll("[data-back]");
+  for(var d=0;d<bks.length;d++){ bks[d].addEventListener("click",function(){ nav(S.from||"open",null); }); }
+  var pks=app.querySelectorAll("[data-pick]");
+  for(var e=0;e<pks.length;e++){ pks[e].addEventListener("click",function(){ var pr=this.getAttribute("data-pick").split(":"); var sh=pr[0],ix=parseInt(pr[1],10); var pk2=S.pick||{}; pk2[sh]=ix; var idx2=S.idx||{}; idx2[sh]=ix; S={screen:S.screen,idx:idx2,from:S.from||null,pick:pk2}; window.hatchWidget.setState(S); render(); }); }
+  var an=app.querySelectorAll("[data-another]");
+  for(var j=0;j<an.length;j++){ an[j].addEventListener("click",function(){ another(this.getAttribute("data-another")); }); }
+}
+render();
+</script>
+</body>
+</html>
