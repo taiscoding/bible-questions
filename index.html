@@ -406,6 +406,10 @@ var PATTERNS = [
 ];
 if(!window.hatchWidget){ (function(){ var _st=null; window.hatchWidget={ getState:function(d){ if(!_st){ _st=JSON.parse(JSON.stringify(d)); } return _st; }, setState:function(s){ _st=s; } }; })(); }
 var S = window.hatchWidget.getState({screen:"open",idx:{},from:null,pick:{}});
+try{
+  var _deep = new URLSearchParams(window.location.search).get("s");
+  if(_deep && typeof SHELVES!=="undefined" && SHELVES[_deep]){ S={screen:"leaf:"+_deep,idx:{},from:null,pick:{}}; window.hatchWidget.setState(S); }
+}catch(e){}
 function nav(screen,from){ S={screen:screen,idx:S.idx||{},from:(from===undefined?null:from),pick:S.pick||{}}; window.hatchWidget.setState(S); render(); }
 function startOver(){ S={screen:"open",idx:S.idx||{},from:null,pick:{}}; window.hatchWidget.setState(S); render(); }
 function another(shelf){ var idx=S.idx||{}; var pool=SHELVES[shelf]; idx[shelf]=((idx[shelf]||0)+1)%pool.length; S={screen:S.screen,idx:idx,from:S.from||null,pick:S.pick||{}}; window.hatchWidget.setState(S); render(); }
