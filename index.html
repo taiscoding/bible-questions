@@ -264,31 +264,31 @@ var VERSE_NOTES = {
   carrying:"the story is 1 Peter 5. Psalm 55:22 is David's older version: cast your burden, he sustains."
 };
 var NEXT = {
-  silence:{q:"what do you hear when it gets quiet?",opts:[["nothing, just noise","mind"],["his absence","spirit"]]},
-  mispeople:{q:"do you have your people?",opts:[["yes, I found them","corner"],["not yet","beknown"]]},
-  beknown:{q:"who are you performing for?",opts:[["someone I love","known"],["God","confess"]]},
-  body:{q:"what's really keeping you from rest?",opts:[["my mind won't quit","mind"],["I feel far from him","spirit"]]},
-  mind:{q:"what's underneath the worry?",opts:[["not enough","provision"],["too much to carry","carrying"]]},
-  spirit:{q:"when did you last feel close?",opts:[["a long time ago","fading"],["not sure I ever did","beknown"]]},
-  twotracks:{q:"what's the fear underneath?",opts:[["choosing wrong","silence"],["wanting too much","ambition"]]},
-  provision:{q:"if you believed it, what would you do?",opts:[["stop striving","body"],["give more","giving"]]},
+  silence:{q:"what do you hear when it gets quiet?",opts:[["I can\'t hear anything over the noise","mind"],["it feels like he\'s not there","spirit"]]},
+  mispeople:{q:"do you have your people?",opts:[["they\'re around me, they\'re my corner","corner"],["I don\'t have them yet","beknown"]]},
+  beknown:{q:"who are you performing for?",opts:[["in my closest relationship","known"],["with God","confess"]]},
+  body:{q:"what\'s really keeping you from rest?",opts:[["the kind where my mind actually stops","mind"],["the kind where I feel close to him again","spirit"]]},
+  mind:{q:"what\'s underneath the worry?",opts:[["not having enough","provision"],["everything I\'m carrying","carrying"]]},
+  spirit:{q:"when did you last feel close?",opts:[["to feel close again, it\'s been a while","fading"],["to feel known by him at all","beknown"]]},
+  twotracks:{q:"what\'s the fear underneath?",opts:[["fear I\'d choose wrong","silence"],["fear I want too much","ambition"]]},
+  provision:{q:"if you believed it, what would you do?",opts:[["striving, always striving","body"],["I\'d stop chasing and start giving","giving"]]},
   freedom:{q:"what was it?",opts:[["money","giving"],["success","ambition"]]},
-  known:{q:"is it with one person?",opts:[["yes","conflict"],["it's with me","confess"]]},
-  conflict:{q:"do you need to move first?",opts:[["yes","repair"],["I need to let it go","carrying"]]},
-  parents:{q:"how do you honor it?",opts:[["carry it forward","discipline"],["forgive what's broken","repair"]]},
-  corner:{q:"what does this make you want?",opts:[["to be known like that","beknown"],["to give like that","giving"]]},
-  waiting:{q:"waiting on what?",opts:[["an answer","doubt"],["a door","door"]]},
+  known:{q:"is it with one person?",opts:[["with one person","conflict"],["with myself","confess"]]},
+  conflict:{q:"do you need to move first?",opts:[["I need to go to them first","repair"],["I need to let it go","carrying"]]},
+  parents:{q:"how do you honor it?",opts:[["I want to carry it forward","discipline"],["part of it still needs forgiving","repair"]]},
+  corner:{q:"what does this make you want?",opts:[["it makes me want to be known like that","beknown"],["it makes me want to give like that","giving"]]},
+  waiting:{q:"waiting on what?",opts:[["an answer I\'m waiting on","doubt"],["a door that hasn\'t opened","door"]]},
   door:{q:"what kind of door?",opts:[["a calling","ambition"],["a relationship","known"]]},
-  doubt:{q:"what's the doubt about?",opts:[["God himself","spirit"],["my choices","decision"]]},
-  confess:{q:"what now?",opts:[["tell someone","mispeople"],["start fresh","discipline"]]},
-  repair:{q:"what's stopping you?",opts:[["fear","doubt"],["pride","confess"]]},
-  grief:{q:"are you alone in it?",opts:[["yes","mispeople"],["no, but still heavy","carrying"]]},
+  doubt:{q:"what\'s the doubt about?",opts:[["God, are you even there?","spirit"],["God, did I choose wrong?","decision"]]},
+  confess:{q:"what now?",opts:[["the one where I tell someone","mispeople"],["the one where I start fresh","discipline"]]},
+  repair:{q:"what\'s stopping you?",opts:[["someone I\'m afraid to face","doubt"],["someone my pride won\'t let me approach","confess"]]},
+  grief:{q:"are you alone in it?",opts:[["one I\'m in alone","mispeople"],["one that\'s still heavy, even with people around","carrying"]]},
   fading:{q:"what have you been listening to?",opts:[["my fears","mind"],["the quiet itself","silence"]]},
-  decision:{q:"is it between two paths?",opts:[["yes","twotracks"],["no, just hard","waiting"]]},
-  ambition:{q:"can you open your hands?",opts:[["not yet","provision"],["I want to","giving"]]},
-  discipline:{q:"where are you stuck?",opts:[["I keep quitting","fading"],["don't know where to start","decision"]]},
-  giving:{q:"what's stopping you?",opts:[["fear of not having enough","doubt"],["my heart's not in it","confess"]]},
-  carrying:{q:"can you set it down?",opts:[["not yet","waiting"],["I need help","corner"]]}
+  decision:{q:"is it between two paths?",opts:[["one between two paths","twotracks"],["one that\'s just hard","waiting"]]},
+  ambition:{q:"can you open your hands?",opts:[["enough, security","provision"],["everything, I can\'t open my hands","giving"]]},
+  discipline:{q:"where are you stuck?",opts:[["one I keep quitting","fading"],["one I don\'t know how to start","decision"]]},
+  giving:{q:"what\'s stopping you?",opts:[["fear keeps it small","doubt"],["my heart\'s not in it","confess"]]},
+  carrying:{q:"can you set it down?",opts:[["something I can\'t set down yet","waiting"],["something I need help carrying","corner"]]}
 };
 var DIAG = {
   silence:{q:"have you been avoiding the quiet, or are you already in it?",opts:[["avoiding it",0],["already in it, and it's loud",1]]},
@@ -477,7 +477,6 @@ function render(){
     html+='<div class="kicker" style="margin-top:28px">keep digging</div>'
       +'<p class="point" style="font-size:17px;margin-top:18px">'+linkify(esc(STORIES[shelf2]))+'</p>'
       +'<p class="point" style="color:var(--ink);font-weight:700;margin-top:24px">'+esc(LANDINGS[shelf2])+'</p>';
-    html+='<p class="point" style="font-size:17px;margin-top:26px">'+esc(NEXT[shelf2].q)+'</p>';
     var _vst=S.visited||[];
     var _opts=NEXT[shelf2].opts.slice().sort(function(x,y){ var xv=_vst.indexOf(x[1])===-1?0:1, yv=_vst.indexOf(y[1])===-1?0:1; return xv-yv; });
     _opts.forEach(function(o){ html+='<button class="opt" data-lf="'+o[1]+'">'+esc(o[0])+'</button>'; });
