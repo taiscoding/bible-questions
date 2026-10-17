@@ -412,6 +412,7 @@ try{
 }catch(e){}
 function storyEntities(shelf){ var t=(typeof STORIES!=="undefined"&&STORIES[shelf])||""; var out=[]; for(var k=0;k<PATTERNS.length;k++){ var pp=PATTERNS[k]; if(pp.id && t.match(pp.re)) out.push(pp.id); } return out; }
 function nav(screen,from){ var v=S.visited||[]; var mt=S.met||[]; if(screen.indexOf("leaf:")===0){ var sh=screen.slice(5); if(v.indexOf(sh)===-1) v.push(sh); storyEntities(sh).forEach(function(id){ if(mt.indexOf(id)===-1) mt.push(id); }); } if(screen.indexOf("codex:")===0){ var cx=screen.slice(6); if(mt.indexOf(cx)===-1) mt.push(cx); } S={screen:screen,idx:S.idx||{},from:(from===undefined?null:from),pick:S.pick||{},visited:v,met:mt}; window.hatchWidget.setState(S); render(); }
+function resetAll(){ S={screen:"open",idx:{},from:null,pick:{},visited:[],met:[]}; window.hatchWidget.setState(S); render(); }
 function startOver(){ S={screen:"open",idx:S.idx||{},from:null,pick:{},visited:S.visited||[],met:S.met||[]}; window.hatchWidget.setState(S); render(); }
 function another(shelf){ var idx=S.idx||{}; var pool=SHELVES[shelf]; idx[shelf]=((idx[shelf]||0)+1)%pool.length; S={screen:S.screen,idx:idx,from:S.from||null,pick:S.pick||{},visited:S.visited||[],met:S.met||[]}; window.hatchWidget.setState(S); render(); }
 window.addEventListener("hatch-widget-state",function(e){ S=e.detail.state; render(); });
@@ -493,7 +494,7 @@ function render(){
     if(N.sub) html+='<p class="sub">'+esc(N.sub)+'</p>';
     N.opts.forEach(function(o){ html+='<button class="opt" data-go="'+o[1]+'">'+esc(o[0])+'</button>'; });
     if(S.screen!=="open") html+='<div class="row"><button class="opt ghost" data-go="open">start over</button></div>';
-    if(S.screen==="open"&&(S.visited||[]).length){ html+='<p class="demo-note" style="margin-top:24px">your trail: '+(S.visited||[]).length+' of '+Object.keys(SHELVES).length+' stories read \u00b7 '+(S.met||[]).length+' of '+Object.keys(CODEX).length+' people and places met</p>'; }
+    if(S.screen==="open"&&(S.visited||[]).length){ html+='<p class="demo-note" style="margin-top:24px">your trail: '+(S.visited||[]).length+' of '+Object.keys(SHELVES).length+' stories read \u00b7 '+(S.met||[]).length+' of '+Object.keys(CODEX).length+' people and places met</p><div class="row"><button class="opt ghost" data-reset="1">start fresh (clears your trail)</button></div>'; }
     html+='</div>';
   }
   app.innerHTML=html;
@@ -503,6 +504,8 @@ function render(){
   for(var c=0;c<ens.length;c++){ ens[c].addEventListener("click",function(){ nav("codex:"+this.getAttribute("data-ent"),S.screen); }); }
   var lfs=app.querySelectorAll("[data-lf]");
   for(var f=0;f<lfs.length;f++){ lfs[f].addEventListener("click",function(){ nav("leaf:"+this.getAttribute("data-lf"),S.screen); }); }
+  var rst=app.querySelectorAll("[data-reset]");
+  for(var r=0;r<rst.length;r++){ rst[r].addEventListener("click",function(){ resetAll(); }); }
   var bks=app.querySelectorAll("[data-back]");
   for(var d=0;d<bks.length;d++){ bks[d].addEventListener("click",function(){ nav(S.from||"open",null); }); }
   var pks=app.querySelectorAll("[data-pick]");
