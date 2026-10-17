@@ -120,7 +120,7 @@ var SHELVES = {
   body:[
     {q:"You're running on fumes and calling it faithfulness. When did rest become something you earn instead of something you keep?",v:"mark 6:31 · matthew 11:28",p:"Rest is an invitation, not a prize. 'Come to me, all who are weary' has no performance clause.",m:"This week: put one rest on the calendar like an appointment. Keep it like one."}],
   mind:[
-    {q:"Your body's in bed but your mind is still on shift. What are you rehearsing that you need to release?",v:"philippians 4:6-7 · psalm 4:8",p:"Bring everything to God and his peace guards your mind. The rehearsal isn't preparation, it's theft.",m:"Tonight: write the looping thought on paper and leave it there."}],
+    {q:"Your body's in bed but your mind is still at work. What are you rehearsing that you need to release?",v:"philippians 4:6-7 · psalm 4:8",p:"Bring everything to God and his peace guards your mind. The rehearsal isn't preparation, it's theft.",m:"Tonight: write the looping thought on paper and leave it there."}],
   spirit:[
     {q:"You're not tired, you're dry. When's the last time you were filled up instead of just fueled up?",v:"psalm 42:1-2 · isaiah 40:31",p:"As the deer pants for water, so the soul pants for God. Caffeine fuels the body. Only one thing fills the spirit.",m:"Tomorrow: 10 minutes, no input. No phone, no podcast. See what fills."}],
   twotracks:[
@@ -405,14 +405,15 @@ var PATTERNS = [
   {re:/\briches\b/gi,id:"wealth"}
 ];
 if(!window.hatchWidget){ (function(){ var _st=null; try{ _st=JSON.parse(window.localStorage.getItem("bq-state")||"null"); }catch(e){} window.hatchWidget={ getState:function(d){ if(!_st){ _st=JSON.parse(JSON.stringify(d)); } return _st; }, setState:function(s){ _st=s; try{ window.localStorage.setItem("bq-state", JSON.stringify(s)); }catch(e){} } }; })(); }
-var S = window.hatchWidget.getState({screen:"open",idx:{},from:null,pick:{},visited:[]});
+var S = window.hatchWidget.getState({screen:"open",idx:{},from:null,pick:{},visited:[],met:[]});
 try{
   var _deep = new URLSearchParams(window.location.search).get("s");
-  if(_deep && typeof SHELVES!=="undefined" && SHELVES[_deep]){ var _v=S.visited||[]; if(_v.indexOf(_deep)===-1)_v.push(_deep); S={screen:"leaf:"+_deep,idx:{},from:null,pick:{},visited:_v}; window.hatchWidget.setState(S); }
+  if(_deep && typeof SHELVES!=="undefined" && SHELVES[_deep]){ var _v=S.visited||[]; if(_v.indexOf(_deep)===-1)_v.push(_deep); S={screen:"leaf:"+_deep,idx:{},from:null,pick:{},visited:_v,met:S.met||[]}; window.hatchWidget.setState(S); }
 }catch(e){}
-function nav(screen,from){ var v=S.visited||[]; if(screen.indexOf("leaf:")===0){ var sh=screen.slice(5); if(v.indexOf(sh)===-1) v.push(sh); } S={screen:screen,idx:S.idx||{},from:(from===undefined?null:from),pick:S.pick||{},visited:v}; window.hatchWidget.setState(S); render(); }
-function startOver(){ S={screen:"open",idx:S.idx||{},from:null,pick:{},visited:S.visited||[]}; window.hatchWidget.setState(S); render(); }
-function another(shelf){ var idx=S.idx||{}; var pool=SHELVES[shelf]; idx[shelf]=((idx[shelf]||0)+1)%pool.length; S={screen:S.screen,idx:idx,from:S.from||null,pick:S.pick||{},visited:S.visited||[]}; window.hatchWidget.setState(S); render(); }
+function storyEntities(shelf){ var t=(typeof STORIES!=="undefined"&&STORIES[shelf])||""; var out=[]; for(var k=0;k<PATTERNS.length;k++){ var pp=PATTERNS[k]; if(pp.id && t.match(pp.re)) out.push(pp.id); } return out; }
+function nav(screen,from){ var v=S.visited||[]; var mt=S.met||[]; if(screen.indexOf("leaf:")===0){ var sh=screen.slice(5); if(v.indexOf(sh)===-1) v.push(sh); storyEntities(sh).forEach(function(id){ if(mt.indexOf(id)===-1) mt.push(id); }); } if(screen.indexOf("codex:")===0){ var cx=screen.slice(6); if(mt.indexOf(cx)===-1) mt.push(cx); } S={screen:screen,idx:S.idx||{},from:(from===undefined?null:from),pick:S.pick||{},visited:v,met:mt}; window.hatchWidget.setState(S); render(); }
+function startOver(){ S={screen:"open",idx:S.idx||{},from:null,pick:{},visited:S.visited||[],met:S.met||[]}; window.hatchWidget.setState(S); render(); }
+function another(shelf){ var idx=S.idx||{}; var pool=SHELVES[shelf]; idx[shelf]=((idx[shelf]||0)+1)%pool.length; S={screen:S.screen,idx:idx,from:S.from||null,pick:S.pick||{},visited:S.visited||[],met:S.met||[]}; window.hatchWidget.setState(S); render(); }
 window.addEventListener("hatch-widget-state",function(e){ S=e.detail.state; render(); });
 function esc(t){var d=document.createElement("div");d.textContent=t;return d.innerHTML;}
 function linkify(text){
@@ -492,6 +493,7 @@ function render(){
     if(N.sub) html+='<p class="sub">'+esc(N.sub)+'</p>';
     N.opts.forEach(function(o){ html+='<button class="opt" data-go="'+o[1]+'">'+esc(o[0])+'</button>'; });
     if(S.screen!=="open") html+='<div class="row"><button class="opt ghost" data-go="open">start over</button></div>';
+    if(S.screen==="open"&&(S.visited||[]).length){ html+='<p class="demo-note" style="margin-top:24px">your trail: '+(S.visited||[]).length+' of '+Object.keys(SHELVES).length+' stories read \u00b7 '+(S.met||[]).length+' of '+Object.keys(CODEX).length+' people and places met</p>'; }
     html+='</div>';
   }
   app.innerHTML=html;
